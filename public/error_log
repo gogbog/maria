@@ -1,0 +1,4 @@
+[05-Apr-2018 11:58:28 UTC] PHP Fatal error:  Cannot use Illuminate\Database\Eloquent\Model as Model because the name is already in use in /home/enforcedigital/LaravelMaria/app/Songs.php on line 6
+[05-Apr-2018 11:58:45 UTC] PHP Fatal error:  Cannot use Illuminate\Database\Eloquent\Model as Model because the name is already in use in /home/enforcedigital/LaravelMaria/app/Songs.php on line 6
+[05-Apr-2018 11:58:56 UTC] PHP Fatal error:  Cannot use Illuminate\Database\Eloquent\Model as Model because the name is already in use in /home/enforcedigital/LaravelMaria/app/Songs.php on line 6
+[05-Apr-2018 12:50:26 UTC] PHP Fatal error:  Cannot use Illuminate\Database\Eloquent\Model as Model because the name is already in use in /home/enforcedigital/LaravelMaria/app/Songs.php on line 6
