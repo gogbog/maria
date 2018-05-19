@@ -15,8 +15,6 @@ class CreateMusicAlbumsTable extends Migration
     {
         Schema::create('music_albums', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('title');
-            $table->text('description');
             $table->string('disc_image');
             $table->string('album_image');
             $table->string('background_image');
@@ -31,6 +29,8 @@ class CreateMusicAlbumsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('music_albums');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        Schema::drop('music_albums');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }

@@ -21,7 +21,8 @@
 	<link href="{{ Config::get('view.backend.css') }}/rtl.min.css" rel="stylesheet" type="text/css">
 	<link href="{{ Config::get('view.backend.css') }}/themes.min.css" rel="stylesheet" type="text/css">
 	<link href="{{ Config::get('view.backend.css') }}/custom.css" rel="stylesheet" type="text/css">
-	
+	<link href="https://cdnjs.cloudflare.com/ajax/libs/flag-icon-css/3.1.0/css/flag-icon.css" rel="stylesheet" type="text/css">
+
 
 
 

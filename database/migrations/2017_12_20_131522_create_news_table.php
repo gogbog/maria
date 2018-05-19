@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -15,10 +16,7 @@ class CreateNewsTable extends Migration
     {
         Schema::create('news', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('title');
             $table->string('img');
-            $table->text('description');
-            $table->text('short_desc');
             $table->timestamps();
         });
     }
@@ -30,6 +28,8 @@ class CreateNewsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('news');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        Schema::drop('news');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }

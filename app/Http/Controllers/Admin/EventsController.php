@@ -15,81 +15,67 @@ use App\Events;
 class EventsController extends Controller
 {
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
 
-    public function create() 
+    public function create()
     {
-    	return view('backend.events.create');
+        return view('backend.events.create');
     }
 
     public function store()
     {
-    	 $this->validate(request(), [
-            'title' => 'required',
-            'description' => 'required',
-            'price' => 'required',
-            'place' => 'required',
-            'hour' => 'required',
-            'date' => 'required',
-        ]);
 
 
-        $event = Events::create([
-        	'title' => request()->get('title'),
-        	'description' => request()->get('description'),
-        	'price' => request()->get('price'),
-        	'place' => request()->get('place'),
-        	'hour' => request()->get('hour'),
-        	'date' => request()->get('date'),
-        ]);
+
+        $data = request()->except(['_token']);
+
+        $event = new Events();
+        $event->fill($data);
+        $event->save();
 
 
         CmsLogs::create([
             'admin_id' => \Auth::user()->id,
-            'action'   => "Създаде събитие с име ". request()->get('title'),
+            'action' => "Създаде събитие с име " . request()->get('title'),
         ]);
 
         request()->session()->flash('success_message', 'Статията беше създадена успешно!');
         return redirect()->route('events.all');
     }
 
-    public function all() 
+    public function all()
     {
-    	$data['events'] = Events::orderBy('created_at', 'desc')->get();
-    	return view('backend.events.all', $data);
+        $data['events'] = Events::orderBy('created_at', 'desc')->get();
+        return view('backend.events.all', $data);
     }
 
     public function edit()
     {
-    	$data['edit'] = true;
+        $data['edit'] = true;
         $data['id'] = request()->id;
         $item = Events::find($data['id']);
         $data['event'] = $item;
 
-         if (request()->isMethod('post')) {
+        if (request()->isMethod('post')) {
 
             $post = (object)Input::get();
             $data['item'] = $post;
+            $new_data = request()->except(['_token']);
 
             try {
 
-                $item->title = $post->title;
-                $item->description = $post->description;
-                $item->price = $post->price;
-                $item->place = $post->place;
-                $item->date = $post->date;
-                $item->hour = $post->hour;
+                $item->fill($new_data);
 
                 $item->save();
 
-                 
 
-              CmsLogs::create([
+                CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Промени статия с име ". request()->get('title'),
-               ]);
+                    'action' => "Промени статия с име " . request()->get('title'),
+                ]);
 
                 Session::flash('success_message', trans('backend.messages.success.created'));
                 return redirect()->route('events.all');
@@ -102,7 +88,8 @@ class EventsController extends Controller
         return view('backend.events.create', $data);
     }
 
-        public function delete() {
+    public function delete()
+    {
 
         $success = false;
         $errormessage = "unknown error";
@@ -120,17 +107,15 @@ class EventsController extends Controller
 
                 CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Изтри събитие с име ". $event_title,
+                    'action' => "Изтри събитие с име " . $event_title,
                 ]);
 
                 $success = true;
             } catch (Exception $e) {
                 $errormessage = $e->getMessage();
             }
-        }
-        else
-        {
-             $errormessage = trans('Не съществува');
+        } else {
+            $errormessage = trans('Не съществува');
         }
 
         return array('success' => $success, 'errormessage' => $errormessage);

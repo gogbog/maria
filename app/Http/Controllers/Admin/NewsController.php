@@ -25,19 +25,20 @@ class NewsController extends Controller
 
     public function store()
     {
-    	 $this->validate(request(), [
-            'title' => 'required',
-            'description' => 'required',
-            'short_desc' => 'required',
-        ]);
+//    	 $this->validate(request(), [
+//            'title' => 'required',
+//            'description' => 'required',
+//            'short_desc' => 'required',
+//        ]);
+
+        $data = request()->except(['_token']);
+        $data['img'] = 0;
+
+        $article = new News();
+        $article->fill($data);
+        $article->save();
 
 
-        $article = News::create([
-        	'title' => request()->get('title'),
-        	'description' => request()->get('description'),
-        	'short_desc' => request()->get('short_desc'),
-        	'img' => 0,
-        ]);
 
         if (request()->file('img') != null) {
         	 $filename = $this->uploadImage(request()->file('img'), $article->id);

@@ -22,64 +22,89 @@
 
                     @include('backend.messages.errors')
 
+                    @php
+                        $locales = config('translatable.locales');
+                    @endphp
+                    <ul class="nav nav-tabs" id="myTab" role="tablist">
+                        @foreach ($locales as $locale)
+                            <li class="nav-item @if ($locale == App::getLocale()) active @endif">
+                                <a class="nav-link @if ($locale == App::getLocale()) active @endif" id="{{$locale}}-tab"
+                                   data-toggle="tab" href="#{{$locale}}" role="tab"
+                                   aria-controls="{{$locale}}"
+                                   aria-selected="@if ($locale == App::getLocale()) true @else false @endif">
+                               <span class="flag-icon flag-icon-@if($locale == 'en')gb @else{{$locale}} @endif"></span> {{$locale}}
+                                </a>
+                            </li>
+                        @endforeach
+                    </ul>
+
                     {{ csrf_field() }}
 
 
                     <div class="form-group">
 
-
-                        <div class="form-group">
-                            <label for="jq-validation-required" class="col-sm-2 control-label">Заглавие</label>
-                            <div class="col-sm-9">
-                                <input @if (!empty($edit)) value="{{ $article->title }}" @endif type="text"
-                                       class="form-control" id="title" name="title" placeholder="Заглавие">
-                            </div>
+                        <div class="tab-content" id="myTabContent">
+                            @foreach($locales as $locale)
+                                <div class="tab-pane fade @if ($locale == App::getLocale()) active in @endif"
+                                     id="{{$locale}}" role="tabpanel" aria-labelledby="{{$locale}}-tab">
+                                    <div class="form-group">
+                                        <label for="jq-validation-required"
+                                               class="col-sm-2 control-label">   <span class="flag-icon flag-icon-@if($locale == 'en')gb @else{{$locale}} @endif"></span>  Заглавие</label>
+                                        <div class="col-sm-9">
+                                            <input  @if (!empty($edit)) value="@if (!empty($article->translate($locale)->title)) {{$article->translate($locale)->title}} @endif" @endif type="text"
+                                                   class="form-control" id="title" name="{{$locale}}[title]" placeholder="Заглавие">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="jq-validation-required"
+                                               class="col-sm-2 control-label">   <span class="flag-icon flag-icon-@if($locale == 'en')gb @else{{$locale}} @endif"></span> Описание</label>
+                                        <div class="col-md-9">
+                                            <script>
+                                                init.push(function () {
+                                                    if (!$('html').hasClass('ie8')) {
+                                                        $('#summernote-example_{{$locale}}').summernote({
+                                                            height: 200,
+                                                            tabsize: 2,
+                                                            codemirror: {
+                                                                theme: 'monokai'
+                                                            }
+                                                        });
+                                                    }
+                                                    $('#summernote-boxed').switcher({
+                                                        on_state_content: '<span class="fa fa-check" style="font-size:11px;"></span>',
+                                                        off_state_content: '<span class="fa fa-times" style="font-size:11px;"></span>'
+                                                    });
+                                                    $('#summernote-boxed').on($('html').hasClass('ie8') ? "propertychange" : "change", function () {
+                                                        var $panel = $(this).parents('.panel');
+                                                        if ($(this).is(':checked')) {
+                                                            $panel.find('.panel-body').addClass('no-padding');
+                                                            $panel.find('.panel-body > *').addClass('no-border');
+                                                        } else {
+                                                            $panel.find('.panel-body').removeClass('no-padding');
+                                                            $panel.find('.panel-body > *').removeClass('no-border');
+                                                        }
+                                                    });
+                                                });
+                                            </script>
+                                            <!-- / Javascript -->
+                                            {{--<textarea style="resize: vertical;" class="form-control" name="description" rows="5"  id="summernote-example"  placeholder="Описание">@if (!empty($edit)){{ $article->description }}@endif</textarea>--}}
+                                            <textarea name="{{$locale}}[description]" style="resize: vertical;" rows="5"
+                                                      placeholder="Описание"
+                                                      class="form-control"
+                                                      id="summernote-example_{{$locale}}">@if (!empty($edit) && !empty($article->translate($locale)->description)) {{$article->translate($locale)->description}}@endif</textarea>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="jq-validation-required" class="col-sm-2 control-label">   <span class="flag-icon flag-icon-@if($locale == 'en')gb @else{{$locale}} @endif"></span> Мини
+                                            Описание</label>
+                                        <div class="col-sm-9">
+                                <textarea style="resize: vertical;" class="form-control" name="{{$locale}}[short_desc]" rows="5"
+                                          placeholder="Мини Описание">@if (!empty($edit) && !empty($article->translate($locale)->short_desc)) {{$article->translate($locale)->short_desc}}@endif</textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
                         </div>
-                        <div class="form-group">
-                            <label for="jq-validation-required" class="col-sm-2 control-label">Описание</label>
-                            <div class="col-md-9">
-                                <script>
-                                    init.push(function () {
-                                        if (!$('html').hasClass('ie8')) {
-                                            $('#summernote-example').summernote({
-                                                height: 200,
-                                                tabsize: 2,
-                                                codemirror: {
-                                                    theme: 'monokai'
-                                                }
-                                            });
-                                        }
-                                        $('#summernote-boxed').switcher({
-                                            on_state_content: '<span class="fa fa-check" style="font-size:11px;"></span>',
-                                            off_state_content: '<span class="fa fa-times" style="font-size:11px;"></span>'
-                                        });
-                                        $('#summernote-boxed').on($('html').hasClass('ie8') ? "propertychange" : "change", function () {
-                                            var $panel = $(this).parents('.panel');
-                                            if ($(this).is(':checked')) {
-                                                $panel.find('.panel-body').addClass('no-padding');
-                                                $panel.find('.panel-body > *').addClass('no-border');
-                                            } else {
-                                                $panel.find('.panel-body').removeClass('no-padding');
-                                                $panel.find('.panel-body > *').removeClass('no-border');
-                                            }
-                                        });
-                                    });
-                                </script>
-                                <!-- / Javascript -->
-                                {{--<textarea style="resize: vertical;" class="form-control" name="description" rows="5"  id="summernote-example"  placeholder="Описание">@if (!empty($edit)){{ $article->description }}@endif</textarea>--}}
-                                <textarea name="description" style="resize: vertical;" rows="5" placeholder="Описание"
-                                          class="form-control"
-                                          id="summernote-example">@if (!empty($edit)){!!$article->description!!}@endif</textarea>
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="jq-validation-required" class="col-sm-2 control-label">Мини Описание</label>
-                            <div class="col-sm-9">
-                                <textarea style="resize: vertical;" class="form-control" name="short_desc" rows="5"
-                                          placeholder="Мини Описание">@if (!empty($edit)){{ $article->short_desc }}@endif</textarea>
-                            </div>
-                        </div>
-
                         <script>
                             init.push(function () {
                                 $('#styled-finputs-example').pixelFileInput({placeholder: 'Няма избран файл...'});

@@ -15,11 +15,9 @@ class CreateSongsTable extends Migration
     {
         Schema::create('songs', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('title');
             $table->integer('album_id');
             $table->string('mp3');
             $table->string('youtube_url');
-            $table->text('lyrics');
             $table->integer('status')->nullable()->default('0');
             $table->string('image')->nullable()->default(null);
             $table->timestamps();
@@ -33,6 +31,8 @@ class CreateSongsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('songs');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        Schema::drop('songs');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }

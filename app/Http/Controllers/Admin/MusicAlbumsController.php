@@ -15,61 +15,61 @@ use Session;
 class MusicAlbumsController extends Controller
 {
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
-    
-    public function create() 
+
+    public function create()
     {
-    	return view('backend.music_albums.create');
+        return view('backend.music_albums.create');
     }
 
     public function store()
     {
-    	 $this->validate(request(), [
-            'title' => 'required',
-            'description' => 'required',
-        ]);
 
 
-        $album = MusicAlbums::create([
-        	'title' => request()->get('title'),
-        	'description' => request()->get('description'),
-        	'disc_image' => 0,
-        	'album_image' => 0,
-        	'background_image' => 0
-        ]);
+        $data = request()->except(['_token']);
+        $data['disc_image'] = 0;
+        $data['album_image'] = 0;
+        $data['background_image'] = 0;
+
+
+        $album = new MusicAlbums();
+        $album->fill($data);
+        $album->save();
+
 
         if (request()->file('disc_image') != null) {
-        	 $disc_image = $this->uploadImage(request()->file('disc_image'), $album->id, 'disc');
-        	 $album->disc_image = $disc_image;
+            $disc_image = $this->uploadImage(request()->file('disc_image'), $album->id, 'disc');
+            $album->disc_image = $disc_image;
         }
 
-         if (request()->file('album_image') != null) {
-        	 $album_image = $this->uploadImage(request()->file('album_image'), $album->id, 'album');
-        	 $album->album_image = $album_image;
+        if (request()->file('album_image') != null) {
+            $album_image = $this->uploadImage(request()->file('album_image'), $album->id, 'album');
+            $album->album_image = $album_image;
         }
 
-         if (request()->file('background_image') != null) {
-        	 $background_image = $this->uploadImage(request()->file('background_image'), $album->id, 'background');
-        	 $album->background_image = $background_image;
+        if (request()->file('background_image') != null) {
+            $background_image = $this->uploadImage(request()->file('background_image'), $album->id, 'background');
+            $album->background_image = $background_image;
         }
 
         $album->save();
 
         CmsLogs::create([
             'admin_id' => \Auth::user()->id,
-            'action'   => "Създаде албум с име ". request()->get('title'),
+            'action' => "Създаде албум с име " . request()->get('title'),
         ]);
 
         request()->session()->flash('success_message', 'Албума беше създаден успешно!');
         return redirect()->route('music_albums.all');
     }
 
-      public function all() 
+    public function all()
     {
-    	$data['albums'] = MusicAlbums::orderBy('created_at', 'desc')->get();
-    	return view('backend.music_albums.all', $data);
+        $data['albums'] = MusicAlbums::orderBy('created_at', 'desc')->get();
+        return view('backend.music_albums.all', $data);
     }
 
 
@@ -80,22 +80,21 @@ class MusicAlbumsController extends Controller
         $item = MusicAlbums::find($data['id']);
         $data['album'] = $item;
 
-         if (request()->isMethod('post')) {
+        if (request()->isMethod('post')) {
 
             $post = (object)Input::get();
             $data['item'] = $post;
             $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music_albums/' . $item->id;
+            $new_data = request()->except(['_token', 'disc_image', 'album_image', 'background_image']);
 
             try {
 
-                $item->title = $post->title;
-                $item->description = $post->description;
+                $item->fill($new_data);
 
 
                 if (request()->file('disc_image') != null) {
-                    
-                    if(strlen($item->disc_image) > 1)
-                    {
+
+                    if (strlen($item->disc_image) > 1) {
                         @unlink($dir . '/' . $item->disc_image);
                     }
 
@@ -104,8 +103,7 @@ class MusicAlbumsController extends Controller
                 }
 
                 if (request()->file('album_image') != null) {
-                        if(strlen($item->album_image) > 1)
-                    {
+                    if (strlen($item->album_image) > 1) {
                         @unlink($dir . '/' . $item->album_image);
                     }
                     $album_name = $this->uploadImage(request()->file('album_image'), $item->id, 'album');
@@ -113,8 +111,7 @@ class MusicAlbumsController extends Controller
                 }
 
                 if (request()->file('background_image') != null) {
-                    if(strlen($item->background_image) > 1)
-                    {
+                    if (strlen($item->background_image) > 1) {
                         @unlink($dir . '/' . $item->background_image);
                     }
                     $bg_name = $this->uploadImage(request()->file('background_image'), $item->id, 'background');
@@ -122,13 +119,12 @@ class MusicAlbumsController extends Controller
                     $item->background_image = $bg_name;
                 }
 
-                 $item->save();
+                $item->save();
 
-                 
 
-              CmsLogs::create([
+                CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Промени албум с име ". request()->get('title'),
+                    'action' => "Промени албум с име " . request()->get('title'),
                 ]);
 
                 Session::flash('success_message', trans('backend.messages.success.created'));
@@ -143,8 +139,8 @@ class MusicAlbumsController extends Controller
     }
 
 
-      protected function uploadImage($file, $product_id = "temp", $type)
-     {
+    protected function uploadImage($file, $product_id = "temp", $type)
+    {
         $filename = $type . '_' . time() . '.' . $file->getClientOriginalExtension();
 
         $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music_albums';
@@ -180,7 +176,7 @@ class MusicAlbumsController extends Controller
         // }
 
         $manager->make($file)->save($dir . '/' . $filename);
-         
+
 
         return $filename;
     }
@@ -192,42 +188,38 @@ class MusicAlbumsController extends Controller
 
         if ($request->ajax() && $request->isMethod('post')) {
 
-                $album_id = (int)$request->get('id');
-                $type = $request->get('type');
+            $album_id = (int)$request->get('id');
+            $type = $request->get('type');
 
-                $item = MusicAlbums::where('id', $album_id)->first();
-                if (!empty($item))
-                {
-                    try
-                    {
-                        $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music_albums/' . $item->id;
-                        
-                        switch ($type) {
-                            case 'disk_image':
-                                 @unlink($dir . '/' . $item->disc_image);
-                                 $item->disc_image = 0;
-                                break;
-                            case 'album_image':
-                                 @unlink($dir . '/' . $item->album_image);
-                                 $item->album_image = 0;
-                                break;
-                            case 'background_image':
-                                 @unlink($dir . '/' . $item->background_image);
-                                 $item->background_image = 0;
-                                break;
-                        }
-                          $item->save();
+            $item = MusicAlbums::where('id', $album_id)->first();
+            if (!empty($item)) {
+                try {
+                    $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music_albums/' . $item->id;
 
-                        //Add log
-                   
-
-                        $success = true;
+                    switch ($type) {
+                        case 'disk_image':
+                            @unlink($dir . '/' . $item->disc_image);
+                            $item->disc_image = 0;
+                            break;
+                        case 'album_image':
+                            @unlink($dir . '/' . $item->album_image);
+                            $item->album_image = 0;
+                            break;
+                        case 'background_image':
+                            @unlink($dir . '/' . $item->background_image);
+                            $item->background_image = 0;
+                            break;
                     }
-                    catch (Exception $e)
-                    {
-                        $errormessage = $e->getMessage();
-                    }
+                    $item->save();
+
+                    //Add log
+
+
+                    $success = true;
+                } catch (Exception $e) {
+                    $errormessage = $e->getMessage();
                 }
+            }
         }
 
         return json_encode(array('success' => $success, 'errormessage' => $errormessage));
@@ -235,7 +227,7 @@ class MusicAlbumsController extends Controller
 
     public function delete()
     {
-         $success = false;
+        $success = false;
         $errormessage = "unknown error";
         $request = request();
 
@@ -249,19 +241,16 @@ class MusicAlbumsController extends Controller
                 $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music_albums/' . $album->id;
 
 
-                if (strlen($album->disc_image) > 1) 
-                {
-                     @unlink($dir . '/' . $album->disc_image);
+                if (strlen($album->disc_image) > 1) {
+                    @unlink($dir . '/' . $album->disc_image);
                 }
 
-                if (strlen($album->album_image) > 1) 
-                {
-                     @unlink($dir . '/' . $album->album_image);
+                if (strlen($album->album_image) > 1) {
+                    @unlink($dir . '/' . $album->album_image);
                 }
 
-                if (strlen($album->background_image) > 1) 
-                {
-                     @unlink($dir . '/' . $album->background_image);
+                if (strlen($album->background_image) > 1) {
+                    @unlink($dir . '/' . $album->background_image);
                 }
 
                 if (count($songs) > 0) {
@@ -277,23 +266,19 @@ class MusicAlbumsController extends Controller
 
                 CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Изтри албум с име ". $album_title,
+                    'action' => "Изтри албум с име " . $album_title,
                 ]);
 
                 $success = true;
             } catch (Exception $e) {
                 $errormessage = $e->getMessage();
             }
-        }
-        else
-        {
-             $errormessage = trans('Не съществува');
+        } else {
+            $errormessage = trans('Не съществува');
         }
 
         return array('success' => $success, 'errormessage' => $errormessage);
     }
-
-
 
 
 }

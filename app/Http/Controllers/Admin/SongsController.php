@@ -14,30 +14,26 @@ use Session;
 class SongsController extends Controller
 {
 
-    public function __construct() {
+    public function __construct()
+    {
         $this->middleware('auth');
     }
-    
-    public function create() 
+
+    public function create()
     {
-    	$data['albums'] = MusicAlbums::orderBy('created_at', 'desc')->get();
-    	return view('backend.music.create', $data);
+        $data['albums'] = MusicAlbums::orderBy('created_at', 'desc')->get();
+        return view('backend.music.create', $data);
     }
 
     public function store()
     {
-    	 $this->validate(request(), [
-            'title' => 'required',
-        ]);
 
+        $data = request()->except(['_token']);
+        $data['mp3'] = 0;
 
-        $song = Songs::create([
-        	'title' => request()->get('title'),
-        	'album_id' => request()->get('album_id'),
-        	'youtube_url' => request()->get('youtube_url'),
-        	'lyrics' => request()->get('lyrics'),
-        	'mp3' => 0,
-        ]);
+        $song = new Songs();
+        $song->fill($data);
+        $song->save();
 
         if (request()->file('mp3') != null) {
 
@@ -56,26 +52,26 @@ class SongsController extends Controller
                 mkdir($dir);
             }
 
-            $music_file->move($dir . '/' , $filename);
+            $music_file->move($dir . '/', $filename);
 
-        	$song->mp3 = $filename;
+            $song->mp3 = $filename;
         }
 
         $song->save();
 
         CmsLogs::create([
             'admin_id' => \Auth::user()->id,
-            'action'   => "Създаде песен с име ". request()->get('title'),
+            'action' => "Създаде песен с име " . request()->get('title'),
         ]);
 
         request()->session()->flash('success_message', 'Песента беше създадена успешно!');
         return redirect()->route('music.all');
     }
 
-    public function all() 
+    public function all()
     {
-    	$data['songs'] = Songs::orderBy('created_at', 'desc')->get();
-    	return view('backend.music.all', $data);
+        $data['songs'] = Songs::orderBy('created_at', 'desc')->get();
+        return view('backend.music.all', $data);
     }
 
 
@@ -87,25 +83,29 @@ class SongsController extends Controller
         $data['song'] = $item;
         $data['albums'] = MusicAlbums::orderBy('created_at', 'desc')->get();
 
-         if (request()->isMethod('post')) {
+
+        if (request()->isMethod('post')) {
 
             $post = (object)Input::get();
             $data['item'] = $post;
-            
+
+            $new_data = request()->except(['_token', 'mp3']);
+
             $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music/' . $item->id;
 
             try {
 
-                $item->title = $post->title;
-                $item->lyrics = $post->lyrics;
-                $item->youtube_url = $post->youtube_url;
-                $item->album_id = $post->album_id;
+
+//                $item->title = $post->title;
+//                $item->lyrics = $post->lyrics;
+//                $item->youtube_url = $post->youtube_url;
+//                $item->album_id = $post->album_id;
+                $item->fill($new_data);
 
 
                 if (request()->file('mp3') != null) {
-                    
-                    if(strlen($item->mp3) > 1)
-                    {
+
+                    if (strlen($item->mp3) > 1) {
                         @unlink($dir . '/' . $item->mp3);
                     }
 
@@ -113,18 +113,17 @@ class SongsController extends Controller
                     $filename = time() . '.' . $music_file->getClientOriginalExtension();
 
 
-                    $music_file->move($dir . '/' , $filename);
+                    $music_file->move($dir . '/', $filename);
 
                     $item->mp3 = $filename;
                 }
 
-                 $item->save();
+                $item->save();
 
-                 
 
                 CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Промени песен с име ". request()->get('title'),
+                    'action' => "Промени песен с име " . request()->get('title'),
                 ]);
 
                 Session::flash('success_message', trans('backend.messages.success.created'));
@@ -138,38 +137,34 @@ class SongsController extends Controller
         return view('backend.music.create', $data);
     }
 
-     public function changeStatus() {
+    public function changeStatus()
+    {
         $id = request()->get('id');
         $success = false;
         $errormessage = "unknown";
 
-        try
-        {
+        try {
             $song = Songs::find($id);
-            
-            if ($song->status == 1) 
-            {
-               $song->status = 0;
+
+            if ($song->status == 1) {
+                $song->status = 0;
+            } else {
+                $song->status = 1;
             }
-            else 
-            {
-               $song->status = 1;
-            }
-            
+
             Session::forget('playlist_new');
             $song->save();
             $success = true;
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
             $errormessage = $e->getMessage();
         }
 
         return array('success' => $success, 'errormessage' => $errormessage);
     }
 
-    public function delete() 
+    public function delete()
     {
-         $success = false;
+        $success = false;
         $errormessage = "unknown error";
         $request = request();
 
@@ -180,29 +175,26 @@ class SongsController extends Controller
                 $song = Songs::find($id);
                 $song_title = $song->title;
                 $dir = $_SERVER['DOCUMENT_ROOT'] . '/frontend/uploads/music/' . $song->id;
-               
 
-                if($song->mp3 != 0)
-                {
-                     @unlink($dir . '/' . $song->mp3);
-                     // rmdir($dir);
+
+                if ($song->mp3 != 0) {
+                    @unlink($dir . '/' . $song->mp3);
+                    // rmdir($dir);
                 }
 
                 $song->delete();
 
                 CmsLogs::create([
                     'admin_id' => \Auth::user()->id,
-                    'action'   => "Изтри песен с име ". $song_title,
+                    'action' => "Изтри песен с име " . $song_title,
                 ]);
 
                 $success = true;
             } catch (Exception $e) {
                 $errormessage = $e->getMessage();
             }
-        }
-        else
-        {
-             $errormessage = trans('Не съществува');
+        } else {
+            $errormessage = trans('Не съществува');
         }
 
         return array('success' => $success, 'errormessage' => $errormessage);

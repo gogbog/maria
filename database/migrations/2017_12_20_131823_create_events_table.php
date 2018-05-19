@@ -1,5 +1,6 @@
 <?php
 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Database\Migrations\Migration;
@@ -15,12 +16,6 @@ class CreateEventsTable extends Migration
     {
         Schema::create('events', function (Blueprint $table) {
             $table->increments('id');
-            $table->string('title');
-            $table->string('place');
-            $table->text('description');
-            $table->string('date');
-            $table->string('hour');
-            $table->float('price', 10, 2)->nullable()->default('0.00');
             $table->timestamps();
         });
     }
@@ -32,6 +27,8 @@ class CreateEventsTable extends Migration
      */
     public function down()
     {
-        Schema::dropIfExists('events');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 0');
+        Schema::drop('events');
+        DB::statement('SET FOREIGN_KEY_CHECKS = 1');
     }
 }
